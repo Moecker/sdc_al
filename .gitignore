@@ -1,2 +1,6 @@
 /*.mp4
 /__pycache__
+/old
+/*.pyproj
+/*.sln
+/.vs
