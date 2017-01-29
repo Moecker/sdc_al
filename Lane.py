@@ -1,23 +1,24 @@
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimage
 
 from Line import Line
 import plotting as plot
 
+
 class Lane:
-    def __init__(self, is_debug=False):
+    def __init__(self, log, is_debug=False):
+        # Logging interface
+        self.log = log
         # Debug mode flag
         self.is_debug = is_debug
         # The left line
-        self.left_line = Line(is_debug)
+        self.left_line = Line(name="left", log=log, is_debug=is_debug)
         # The right line
-        self.right_line = Line(is_debug)
+        self.right_line = Line(name="right", log=log, is_debug=is_debug)
         
         
     def locate_lines(self, img):
-        print("Locating lines ...")
+        self.log.debug("Locating lines ...")
         number_of_sliding_windows = 4
 
         left_extracted = np.zeros_like(img)
@@ -36,14 +37,14 @@ class Lane:
             left_extracted[end_y:start_y, :] = self._extract_line_image_(img_section, left_x)
             right_extracted[end_y:start_y, :] = self._extract_line_image_(img_section, right_x)
 
-        if self.is_debug: plt = plot.plot_images(left_extracted, right_extracted, "left_right", is_gray=True)
+        if self.is_debug: plotted = plot.plot_images(left_extracted, right_extracted, "left_right", is_gray=True)
 
         self._extract_fit_points_(left_extracted, self.left_line)
         self._extract_fit_points_(right_extracted, self.right_line)
       
 
     def _extract_fit_points_(self, img, line):
-        print("Extracting fit points ...")
+        self.log.debug("Extracting fit points ...")
         all_non_zero = np.nonzero(img)
         line.all_x_pixels = all_non_zero[1]
         line.all_y_pixels = all_non_zero[0]
@@ -59,7 +60,7 @@ class Lane:
 
 
     def histogram_search(self, histogram):
-        print("Histogram search ...")
+        self.log.debug("Histogram search ...")
         num_pixels_x = len(histogram)
 
         left_side = histogram[0:int(num_pixels_x/2)]
@@ -76,16 +77,15 @@ class Lane:
 
     def fit_lines(self):
         # Fit a second order polynomial to pixel positions in each fake lane line
-        plt.clf()
         self.left_line.fit()
         self.right_line.fit()
 
     
-    def draw_lines(self, image, transformed_image, inverse_M):
-        print("Drawing lines ...")
+    def draw_lines(self, image, binary_birdeye, birdeye_image, inverse_M):
+        self.log.debug("Drawing lines ...")
 
         # Create an image to draw the lines on
-        warp_zero = np.zeros_like(transformed_image).astype(np.uint8)
+        warp_zero = np.zeros_like(binary_birdeye).astype(np.uint8)
         color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
     
         # Recast the x and y points into usable format for cv2.fillPoly()
@@ -105,7 +105,9 @@ class Lane:
 
         # Warp the blank back to original image space using inverse perspective matrix (inverse_M)
         newwarp = cv2.warpPerspective(color_warp, inverse_M, (image.shape[1], image.shape[0]))
+
         # Combine the result with the original image
         result = cv2.addWeighted(image, 1, newwarp, 0.5, 0)
+        result_bird = cv2.addWeighted(birdeye_image, 1, color_warp, 0.5, 0)
   
-        return result
+        return result, result_bird

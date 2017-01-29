@@ -8,11 +8,13 @@ import matplotlib.image as mpimage
 from Calibration import Calibration
        
 class Camera:
-    def __init__(self, corners_x, corners_y, calibration=Calibration(), is_debug=False):
+    def __init__(self, corners_x, corners_y, log, calibration=Calibration(), is_debug=False):
         # Base points for transformation
         kBaseLeft = 200
         kBaseRight = 900
         kBaseBottom = 720
+        # Logging interface
+        self.log = log
         # Number of corners in x-direction for calibration images
         self.corners_x = corners_x
         # Number of corners in y-direction for calibration images
@@ -37,7 +39,7 @@ class Camera:
         self.inverse_M = cv2.getPerspectiveTransform(self.destination_points, self.source_points)
 
     def calibrate(self, file_list):
-        print("Calibrating camera ...")
+        self.log.debug("Calibrating camera ...")
 
         # Prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
         target_object_points = np.zeros((self.corners_x * self.corners_y, 3), np.float32)
@@ -67,7 +69,7 @@ class Camera:
                 # draw and display the corners
                 image = cv2.drawChessboardCorners(image, (self.corners_x, self.corners_y), corners, ret)
             else:
-                print("Warning: Correct number of corners for image {}".format(fname) + " was not found")
+                self.log.debug("Warning: Correct number of corners for image {}".format(fname) + " was not found")
 
         # Get camera calibration params
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(object_points, 
@@ -79,7 +81,7 @@ class Camera:
        
         
     def undistort_image(self, image):
-        print("Undistorting image ...")
+        self.log.debug("Undistorting image ...")
             
         # Apply distortion correction to the image
         undistorted_image = cv2.undistort(image, 
@@ -91,7 +93,7 @@ class Camera:
 
         
     def perspective_transformation(self, image):
-        print("Perspecive transformation ...")
+        self.log.debug("Perspecive transformation ...")
         
         # Apply he perspective transformation
         image_size = (image.shape[1], image.shape[0])
@@ -104,7 +106,7 @@ class Camera:
        
           
     def detect_edges(self, image):
-        print("Detecting edges ...")
+        self.log.debug("Detecting edges ...")
        
         # 1. Sobel filtering
         # Grayscale the image
