@@ -24,6 +24,8 @@ class Lane:
         left_extracted = np.zeros_like(img)
         right_extracted = np.zeros_like(img)
 
+        prev_left, prev_right = None, None
+
         for window_index in range(number_of_sliding_windows, 0, -1):
             start_y = int(window_index * img.shape[0] / number_of_sliding_windows)
             end_y = int((window_index - 1) * img.shape[0] / number_of_sliding_windows)
@@ -32,10 +34,16 @@ class Lane:
             histogram = np.sum(img_section, axis=0)
 
             # Find X coords of two peaks of histogram
-            left_x, right_x = self.histogram_search(histogram)
+            if prev_left == None or prev_right == None:
+                left_x, right_x = self.full_histogram_search(histogram)
+            else:
+                left_x = self.windowed_histogram_search(histogram, prev_left)
+                right_x = self.windowed_histogram_search(histogram, prev_right)
 
             left_extracted[end_y:start_y, :] = self._extract_line_image_(img_section, left_x)
             right_extracted[end_y:start_y, :] = self._extract_line_image_(img_section, right_x)
+
+            prev_left, prev_right = left_x, right_x
 
         if self.is_debug: plotted = plot.plot_images(left_extracted, right_extracted, "left_right", is_gray=True)
 
@@ -59,20 +67,26 @@ class Lane:
         return img_section & mask
 
 
-    def histogram_search(self, histogram):
-        self.log.debug("Histogram search ...")
-        num_pixels_x = len(histogram)
+    def full_histogram_search(self, histogram):
+        self.log.debug("Full histogram search ...")
+        num_pixels = len(histogram)
 
-        left_side = histogram[0:int(num_pixels_x/2)]
-        left_peak_x = np.argmax(left_side)
-
-        right_side = histogram[int(num_pixels_x/2):]
-        right_peak_x = np.argmax(right_side)
-
-        right_offset = int(num_pixels_x/2)
-        right_peak_x += right_offset
+        half_width = int(num_pixels/2)
+        left_peak_x = np.argmax(histogram[0:half_width])
+        right_peak_x = half_width + np.argmax(histogram[half_width:])
 
         return left_peak_x, right_peak_x
+
+
+    def windowed_histogram_search(self, histogram, prev_x):
+        self.log.debug("Windowed histogram search ...")
+        kHistWindow = 160
+
+        start = max(0, int(prev_x - (kHistWindow/2)))
+        end = min(len(histogram), int(prev_x + (kHistWindow/2)))
+        peak_x = start + np.argmax(histogram[start:end])
+
+        return peak_x
 
 
     def fit_lines(self):

@@ -13,6 +13,7 @@ class Camera:
         kBaseLeft = 200
         kBaseRight = 900
         kBaseBottom = 720
+        kBaseCenter = 450
         # Logging interface
         self.log = log
         # Number of corners in x-direction for calibration images
@@ -21,8 +22,8 @@ class Camera:
         self.corners_y = corners_y
         # Source points for perspective transformation
         self.source_points = np.float32([[200,kBaseBottom],
-                                         [594,450],
-                                         [688,450],
+                                         [594,kBaseCenter],
+                                         [688,kBaseCenter],
                                          [1100,kBaseBottom]])
         # Destination points for perspective transformation
         self.destination_points = np.float32([[kBaseLeft,kBaseBottom],
@@ -93,7 +94,7 @@ class Camera:
 
         
     def perspective_transformation(self, image):
-        self.log.debug("Perspecive transformation ...")
+        self.log.debug("Perspective transformation ...")
         
         # Apply he perspective transformation
         image_size = (image.shape[1], image.shape[0])

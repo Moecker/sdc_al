@@ -13,8 +13,6 @@ import pickle
 import glob
 import os
 
-from moviepy.editor import VideoFileClip
-
 import plotting as plot
 
 from Camera import Camera
@@ -61,8 +59,6 @@ def main(use_images=False, use_video=False):
         # Save the calibration
         save_calibration(camera, kCalibrationPickleFile)
     
-    images = glob.glob(kTestImagesFolder + '*.jpg')
-    
     if use_images: run_images(camera, lane)
     if use_video: run_video(camera, lane)
     if not use_images and not use_video: print("Warning: No mode selected")
@@ -70,6 +66,8 @@ def main(use_images=False, use_video=False):
 
 def run_video(camera, lane):
     log.info("Running video ...")
+
+    from moviepy.editor import VideoFileClip
 
     clip = VideoFileClip("./project_video.mp4")
     output_video = "./project_video_processed.mp4"
@@ -80,10 +78,10 @@ def run_video(camera, lane):
 
 def run_images(camera, lane):
     log.info("Running images ...")
-    images = glob.glob(kTestImagesFolder + '*.jpg')
+    images = glob.glob(kTestImagesFolder + 'test*.jpg')
     for file_name in images:
     
-        log.debug("Processing " + file_name + " ...")
+        log.info("Processing " + file_name + " ...")
         
         # Read in an image
         image = cv2.imread(file_name)
@@ -122,7 +120,7 @@ def process_image(image, frame_name=""):
     combined_image, combined_birdeye = lane.draw_lines(undistorted_image, 
         binary_birdeye, birdeye_image, camera.inverse_M)
 
-    if is_debug: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
+    if is_debug or plot_output: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
     if is_debug or plot_output: plotted = plot.plot_images(undistorted_image, combined_image, frame_name + "_combined")
 
     return combined_image
@@ -145,4 +143,5 @@ def save_calibration(camera, pickle_file):
 
 
 # Call the main routine
-main(use_images=False, use_video=True)
+main(use_images=False)
+main(use_video=True)
