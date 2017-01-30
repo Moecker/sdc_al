@@ -129,8 +129,8 @@ class Camera:
         
         
     def _apply_sobel_(self, gray):
-        kGradientMin = 20
-        kGradientMax = 200
+        kGradientMin = 15
+        kGradientMax = 100
         
         # Take the derivative only in x
         sobel_x_filter = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
@@ -152,7 +152,7 @@ class Camera:
         
     def _apply_color_(self, saturation):
         # Threshold color channel
-        kSaturationMin = 170
+        kSaturationMin = 175
         kSaturationMax = 240
         
         color_tresholded = np.zeros_like(saturation)

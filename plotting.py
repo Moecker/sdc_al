@@ -35,6 +35,7 @@ def plot_images(image, adopted_image, name, is_gray=False):
     plt.title(name)
     
     plt.savefig(kOutputFolder + name + "_plot.png")
+  
     return plt
 
 
