@@ -5,7 +5,7 @@ import matplotlib.image as mpimage
 
 import logging as log
 import sys
-log.basicConfig(stream=sys.stderr, level=log.ERROR)
+log.basicConfig(stream=sys.stderr, level=log.DEBUG)
 
 import numpy as np
 import cv2
@@ -28,11 +28,11 @@ kCalibrationPickleFile = 'calibration.p'
 
 shall_calibrate = False;
 
-is_debug = False
-is_camera_debug = False
-is_lane_debug = False
+is_debug = True
+is_camera_debug = True
+is_lane_debug = True
 
-plot_output = False
+plot_output = True
 
 camera = None
 lane = None
@@ -81,9 +81,9 @@ def run_video(camera):
     clip = VideoFileClip("./" + file + ".mp4")
     output_video = "./" + file + "_processed.mp4"
 
-    # output_clip = clip.subclip(1, 121).fl_image(process_image)
     output_clip = clip.fl_image(process_image)
-    
+    # output_clip = clip.subclip(1, 10).fl_image(process_image)
+
     output_clip.write_videofile(output_video, audio=False)
 
 
@@ -169,5 +169,5 @@ def save_calibration(camera, pickle_file):
 
 
 # Call the main routine
-# main(use_video=False)
-main(use_video=True)
+main(use_video=False)
+# main(use_video=True)

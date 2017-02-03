@@ -60,7 +60,7 @@ class Line():
     def fit(self, use_history=False):
         self.log.debug("Fitting line ...")
 
-        kMaxMissingFrames = 5
+        kMaxMissingFrames = 4
         kMinNumberOfPixels = 10
 
         if len(self.all_y_pixels) < kMinNumberOfPixels or len(self.all_x_pixels) < kMinNumberOfPixels:
@@ -112,7 +112,7 @@ class Line():
 
 
     def check_fit(self):
-        kThresholdX2 = 1E-4
+        kThresholdX2 = 1E-5
 
         if self.diffs[0] > kThresholdX2:
             return False
@@ -139,7 +139,7 @@ class Line():
     def _plot_fit_(self):
         if self.is_debug:
             plt.clf()
-            plt.plot(self.all_x_pixels, self.all_y_pixels[1:-1], 'o', color='red', markersize=2)
+            plt.plot(self.all_x_pixels, self.all_y_pixels, 'o', color='red', markersize=2)
 
             plt.xlim(0, 1280)
             plt.plot(self.best_computed_x, self.y_vals_for_drawing, color='green', linewidth=4)
