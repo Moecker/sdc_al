@@ -25,6 +25,9 @@ class Lane:
         self.use_history=use_history
         # Has a lane been detected previousely?
         self.was_detected=False
+        # Keeps track on the current frame
+        self.frame_number = 0
+        self.last_full_detection = 0
         
 
     def locate_lines_udacity(self, binary_warped):
@@ -37,19 +40,77 @@ class Lane:
                                          self.right_line.best_coefficients)
 
 
+    def check_validity(self):
+        kNeedFullDetection = 3
+
+        if np.abs(self.last_full_detection - self.frame_number) >= kNeedFullDetection:
+            self.was_detected = False
+
+        if self.was_detected:
+            if not self.left_line.detected:
+                self.left_line.best_coefficients[0:1] = self.right_line.best_coefficients[0:1]
+                self.log.warn("Using right coefs for left")
+                self.left_line.detected = True
+
+            elif not self.right_line.detected:
+                self.right_line.best_coefficients[0:1] = self.left_line.best_coefficients[0:1]
+                self.log.warn("Using left coefs for right")
+                self.right_line.detected = True
+            else:
+                self.last_full_detection = self.frame_number
+
+
+    def check_conformance(self):
+        diff_left_right_coeffs = self.left_line.best_coefficients - self.right_line.best_coefficients
+
+        kWidthDifferenceThreshold = 150
+        width_bottom = np.abs(self.left_line.best_computed_x[-1] - self.right_line.best_computed_x[-1]) 
+        width_top = np.abs(self.left_line.best_computed_x[0] - self.right_line.best_computed_x[0])
+
+        if np.abs(width_bottom - width_top) > kWidthDifferenceThreshold:
+            return False
+
+        return True
+
+
+    def init_lanes(self):
+        self.left_line.reset()
+        self.right_line.reset()
+
+
     def locate_lines(self, img):
         self.log.debug("Locating lines ...")
+
+        self.left_line.frame_number = self.frame_number
+        self.right_line.frame_number = self.frame_number
+
+        # Set the to-be-drawn y-vals
+        self.left_line.y_vals_for_drawing = np.linspace(0, img.shape[0]-1, int(img.shape[0]/2))
+        self.right_line.y_vals_for_drawing = self.left_line.y_vals_for_drawing
 
         # The left and right binary which only contain line points
         left_extracted = np.zeros_like(img)
         right_extracted = np.zeros_like(img)
 
+        # At least one has to be detected
+        self.was_detected = self.left_line.detected \
+                        and self.right_line.detected \
+                        and self.check_conformance()
+
         if self.was_detected:
             self._locate_lines_frame_based_(img, left_extracted, right_extracted)
         else:
+            self.log.warn("Triggering full histo search")
+            
+            # Reinit lanes (basicall ydeleting the old array of previous fits)
+            self.init_lanes()
+            
             self._locate_lines_histo_based_(img, left_extracted, right_extracted)
+            
+            # Assume that we have a new detection
+            self.left_line.detected = True 
+            self.right_line.detected = True 
             self.was_detected = True
-       
 
         if self.is_debug: 
             plotted = plot.plot_images(left_extracted, right_extracted, self.name + "_both_extracted", is_gray=True)
@@ -57,7 +118,7 @@ class Lane:
         # From the image only get the non zero element (which will be our to-be-fitted points)
         self._extract_fit_points_(left_extracted, self.left_line)
         self._extract_fit_points_(right_extracted, self.right_line)
-      
+
 
     def _locate_lines_frame_based_(self, img, left_extracted, right_extracted):
         nonzero = img.nonzero()
@@ -171,10 +232,10 @@ class Lane:
     
         # Recast the x and y points into usable format for cv2.fillPoly()
         pts_left = np.array([np.transpose(np.vstack(
-            [self.left_line.best_computed_x, self.left_line.all_y_pixels]))])
+            [self.left_line.best_computed_x, self.left_line.y_vals_for_drawing]))])
 
         pts_right = np.array([np.flipud(np.transpose(np.vstack(
-            [self.right_line.best_computed_x, self.right_line.all_y_pixels])))])
+            [self.right_line.best_computed_x, self.right_line.y_vals_for_drawing])))])
 
         pts = np.hstack((pts_left, pts_right))
         
@@ -219,8 +280,8 @@ class Lane:
         center_x = (lane_x / 2.0) + self.left_line.best_x_offset
 
         # According to US regulation the lane width is 3.70m
-        kCmPerPixel = 3.70 / lane_x
-        dist_from_center = (center_x - perfect_center) * kCmPerPixel
+        kPerPixel = 3.7/700 # meters per pixel in x dimension
+        dist_from_center = (center_x - perfect_center) * kPerPixel
 
         dist_text = "Dist from Center: {0:.2f} m".format(dist_from_center)
         cv2.putText(result, dist_text, (450,50), font, 1, (255,255,255), 2)

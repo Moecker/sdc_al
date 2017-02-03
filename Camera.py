@@ -8,12 +8,14 @@ import matplotlib.image as mpimage
 from Calibration import Calibration
        
 class Camera:
-    def __init__(self, corners_x, corners_y, log, calibration=Calibration(), is_debug=False):
+    def __init__(self, corners_x, corners_y, log, calibration=Calibration(), is_debug=False, mode="udacity"):
         # Base points for transformation
         kBaseLeft = 200
         kBaseRight = 900
         kBaseBottom = 720
         kBaseCenter = 450
+        # Mode whether we use udacity video or own video
+        self.mode = mode
         # Logging interface
         self.log = log
         # Number of corners in x-direction for calibration images
@@ -21,15 +23,35 @@ class Camera:
         # Number of corners in y-direction for calibration images
         self.corners_y = corners_y
         # Source points for perspective transformation
-        self.source_points = np.float32([[200,kBaseBottom],
-                                         [594,kBaseCenter],
-                                         [688,kBaseCenter],
-                                         [1100,kBaseBottom]])
+        self.source_points_udacity = np.float32([[200,kBaseBottom],
+                                                 [594,kBaseCenter],
+                                                 [688,kBaseCenter],
+                                                 [1100,kBaseBottom]])
         # Destination points for perspective transformation
-        self.destination_points = np.float32([[kBaseLeft,kBaseBottom],
-                                              [kBaseLeft,0],
-                                              [kBaseRight,0],
-                                              [kBaseRight,kBaseBottom]])
+        self.destination_points_udacity = np.float32([[kBaseLeft,kBaseBottom],
+                                                      [kBaseLeft,0],
+                                                      [kBaseRight,0],
+                                                      [kBaseRight,kBaseBottom]])
+
+        self.source_points_own = np.float32([[0,1100],
+                                             [780,500],
+                                             [920, 500],
+                                             [1900,1100]])
+        # Destination points for perspective transformation
+        self.destination_points_own = np.float32([[400,1100],
+                                                  [200,0],
+                                                  [1450,0],
+                                                  [1200,1100]])
+                                                         
+        if mode=="udacity": 
+            self.log.warn("Using Udacity Camera Data")
+            self.source_points = self.source_points_udacity    
+            self.destination_points = self.destination_points_udacity                
+        if mode=="own": 
+            self.log.warn("Using Own Camera Data")
+            self.source_points = self.source_points_own     
+            self.destination_points = self.destination_points_own                              
+                                                  
         # Camera calibraton
         self.calibration = calibration
         # Debug mode
@@ -38,6 +60,7 @@ class Camera:
         self.M = cv2.getPerspectiveTransform(self.source_points, self.destination_points)
         # Inverse Perspective transformation matrix
         self.inverse_M = cv2.getPerspectiveTransform(self.destination_points, self.source_points)
+
 
     def calibrate(self, file_list):
         self.log.debug("Calibrating camera ...")

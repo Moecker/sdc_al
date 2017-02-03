@@ -48,7 +48,7 @@ def main(use_video=False):
 
     # Create a camera object
     global camera
-    camera = Camera(kCornersX, kCornersY, log=log, calibration=calibration, is_debug=is_camera_debug)
+    camera = Camera(kCornersX, kCornersY, log=log, calibration=calibration, is_debug=is_camera_debug, mode="own")
     
     # Calibration
     if shall_calibrate:
@@ -63,22 +63,26 @@ def main(use_video=False):
 
 def run_video(camera):
     log.info("Running video ...")
+    log.warn("+++++++++++++++++")
 
     from moviepy.editor import VideoFileClip
 
     # Use the exisiting global lane object
     global lane
+
     # Note that only in video mode we use a history of lane fitting
     lane = Lane(log=log, is_debug=is_lane_debug, use_history=True)
 
+    # file = "project_video"
     # file = "challenge_video"
-    file = "project_video"
-
+    # file = "harder_challenge_video"
+    file = "VID_20170122_005552"
+    
     clip = VideoFileClip("./" + file + ".mp4")
     output_video = "./" + file + "_processed.mp4"
 
-    # output_clip = clip.subclip(20, 30).fl_image(process_image)
-    output_clip = clip.fl_image(process_image)
+    output_clip = clip.subclip(1, 121).fl_image(process_image)
+    # output_clip = clip.fl_image(process_image)
     output_clip.write_videofile(output_video, audio=False)
 
 
@@ -127,17 +131,22 @@ def process_image(image, frame_name=""):
     
     log.info("# 5. Fit the lines of the lane")
     lane.fit_lines()
+
+    log.info("# 6. Check fit validity")
+    lane.check_validity()
     
-    log.info("# 6. Draw lane back onto the road")
+    log.info("# 7. Draw lane back onto the road")
     combined_image, combined_birdeye = lane.draw_lines(undistorted_image, 
         binary_birdeye, birdeye_image, camera.inverse_M)
 
-    # @todo Delete
+    # @todo Udacity code
     # lane.locate_lines_udacity(binary_birdeye)
     # lane.locate_lines_frame_based_udacity(binary_birdeye)
 
-    if is_debug or plot_output: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
-    if is_debug: plotted = plot.plot_images(undistorted_image, combined_image, frame_name + "_combined")
+    if is_debug: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
+    if is_debug or plot_output: plotted = plot.plot_images(undistorted_image, combined_image, frame_name + "_combined")
+
+    lane.frame_number += 1
 
     return combined_image
         
@@ -159,4 +168,5 @@ def save_calibration(camera, pickle_file):
 
 
 # Call the main routine
+# main(use_video=False)
 main(use_video=True)

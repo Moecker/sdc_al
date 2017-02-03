@@ -21,6 +21,8 @@ class Line():
         # Was the line detected in the last iteration?
         self.detected = False  
 
+        self.fit_ok = False
+
         # Coefficients for the last n iterations
         self.all_coefficients = collections.deque(maxlen=5)
         # Polynomial coefficients averaged over the last n iterations
@@ -45,44 +47,94 @@ class Line():
         self.all_x_pixels = None  
         # Y values for detected line pixels
         self.all_y_pixels = None
+        self.y_vals_for_drawing = None
+
+        self.frame_number = 0
+        self.last_frame_update = 0
+
+
+    def reset(self):
+        self.all_coefficients.clear()   
 
 
     def fit(self, use_history=False):
         self.log.debug("Fitting line ...")
 
+        kMaxMissingFrames = 4
+        kMinNumberOfPixels = 10
+
+        if len(self.all_y_pixels) < kMinNumberOfPixels or len(self.all_x_pixels) < kMinNumberOfPixels:
+            self.log.warn("Too less pixels, skipping fit")
+            return
+            
         # Compute current coefficients
         self.current_coefficients = np.polyfit(self.all_y_pixels, self.all_x_pixels, 2)
-        self.all_coefficients.append(self.current_coefficients)
         
         # Compute mean if we have more than one fit and history is active
         if len(self.all_coefficients) > 1 and use_history:
             self.best_coefficients = np.mean(self.all_coefficients, axis=0)
-            self.diffs = self.best_coefficients - self.current_coefficients
-        else:        
-            self.best_coefficients = self.all_coefficients[0]
+            self.diffs = np.abs(self.best_coefficients - self.current_coefficients)
 
+            # Check whether the lane has a reasonably fit compared to last fit
+            self.fit_ok = self.check_fit()
+        else:        
+            self.best_coefficients = self.current_coefficients
+            # We must expect the first fit to be correct since there is no comparison possible
+            self.fit_ok = True
+
+        self.all_coefficients.append(self.current_coefficients)
+
+        # Only update line if fit was ok
+        if self.fit_ok:
+            self.update_line()
+        else:
+            self.log.warn("Fit of " + self.name + " was not ok")
+
+        if np.abs(self.frame_number - self.last_frame_update) >= kMaxMissingFrames:
+            self.log.warn("Mark " + self.name + " as not detected")
+            self.detected = False          
+
+
+    def update_line(self):
         # Compute the x values based on the bes fit
         coef = self.best_coefficients
-        self.best_computed_x = coef[0] * self.all_y_pixels**2 + coef[1] * self.all_y_pixels + coef[2]
+        self.best_computed_x = coef[0] * self.y_vals_for_drawing**2 + coef[1] * self.y_vals_for_drawing + coef[2]
 
         # Extract the curvature
         self._compute_curvature_()
-
-        # Add top-most and bottom-most point to our y-array
-        self.fill_gap()
 
         # Get the x-offset
         self.best_x_offset = self.best_computed_x[-1]
 
         self._plot_fit_()
 
+        self.last_frame_update = self.frame_number
+
+
+    def check_fit(self):
+        kThresholdX2 = 1E-5
+
+        if self.diffs[0] > kThresholdX2:
+            return False
+        else:
+            return True
+
 
     def _compute_curvature_(self):
-        coef = self.best_coefficients
-        y_eval = 300
+        y_eval = np.max(self.y_vals_for_drawing)
 
-        self.radius_of_curvature = ((1 + (2*coef[0] * y_eval + coef[1])**2)**1.5) / np.absolute(2*coef[0])
+        # Define conversions in x and y from pixels space to meters
+        ym_per_pix = 30/720 # meters per pixel in y dimension
+        xm_per_pix = 3.7/700 # meters per pixel in x dimension
 
+        # Fit new polynomials to x,y in world space
+        curvature_coeffs = np.polyfit(self.y_vals_for_drawing * ym_per_pix, self.best_computed_x * xm_per_pix, 2)
+
+        # Calculate the new radii of curvature
+        self.radius_of_curvature = \
+            ((1 + (2 * curvature_coeffs[0]*y_eval * ym_per_pix + curvature_coeffs[1]) ** 2) ** 1.5) \
+            / np.absolute(2 * curvature_coeffs[0])
+        
 
     def _plot_fit_(self):
         if self.is_debug:
@@ -90,7 +142,7 @@ class Line():
             plt.plot(self.all_x_pixels, self.all_y_pixels[1:-1], 'o', color='red', markersize=2)
 
             plt.xlim(0, 1280)
-            plt.plot(self.best_computed_x, self.all_y_pixels, color='green', linewidth=4)
+            plt.plot(self.best_computed_x, self.y_vals_for_drawing, color='green', linewidth=4)
 
             plt.gca().invert_yaxis()
             plot.save_plot(plt, self.name + "_fitted.png")
