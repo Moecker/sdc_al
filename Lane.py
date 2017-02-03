@@ -63,7 +63,7 @@ class Lane:
     def check_conformance(self):
         diff_left_right_coeffs = self.left_line.best_coefficients - self.right_line.best_coefficients
 
-        kWidthDifferenceThreshold = 150
+        kWidthDifferenceThreshold = 120
         width_bottom = np.abs(self.left_line.best_computed_x[-1] - self.right_line.best_computed_x[-1]) 
         width_top = np.abs(self.left_line.best_computed_x[0] - self.right_line.best_computed_x[0])
 
@@ -102,8 +102,8 @@ class Lane:
         else:
             self.log.warn("Triggering full histo search")
             
-            # Reinit lanes (basicall ydeleting the old array of previous fits)
-            self.init_lanes()
+            # Reinit lanes (basicall deleting the old array of previous fits)
+            # Not active since impact rather unclear: self.init_lanes()
             
             self._locate_lines_histo_based_(img, left_extracted, right_extracted)
             

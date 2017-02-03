@@ -48,7 +48,7 @@ def main(use_video=False):
 
     # Create a camera object
     global camera
-    camera = Camera(kCornersX, kCornersY, log=log, calibration=calibration, is_debug=is_camera_debug, mode="own")
+    camera = Camera(kCornersX, kCornersY, log=log, calibration=calibration, is_debug=is_camera_debug, mode="udacity")
     
     # Calibration
     if shall_calibrate:
@@ -73,16 +73,17 @@ def run_video(camera):
     # Note that only in video mode we use a history of lane fitting
     lane = Lane(log=log, is_debug=is_lane_debug, use_history=True)
 
-    # file = "project_video"
+    file = "project_video"
     # file = "challenge_video"
     # file = "harder_challenge_video"
-    file = "VID_20170122_005552"
+    # file = "VID_20170122_005552"
     
     clip = VideoFileClip("./" + file + ".mp4")
     output_video = "./" + file + "_processed.mp4"
 
-    output_clip = clip.subclip(1, 121).fl_image(process_image)
-    # output_clip = clip.fl_image(process_image)
+    # output_clip = clip.subclip(1, 121).fl_image(process_image)
+    output_clip = clip.fl_image(process_image)
+    
     output_clip.write_videofile(output_video, audio=False)
 
 
