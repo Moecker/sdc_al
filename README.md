@@ -13,19 +13,63 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./output_images/calibration/test_calibration.jpg "Calibration Image"
+[cal_src]: ./output_images/calibration/test_calibration.jpg "Test Calibration Image"
+[cal_src_chess]: ./output_images/calibration/test_calibration_chessboard_corners.jpg "Test Calibration Image Chessboard Corners"
+[cal_src_undist]: ./output_images/calibration/test_calibration_undistorted.jpg "Test Calibration Image Undistorted"
+[cal_src_undist_warped]: ./output_images/calibration/test_calibration_undistorted_warped.jpg "Test Calibration Image Undistorted Warped"
+
+[undist1]: ./output_images/pipeline_readme/undistorted_plot_1.png
+[undist2]: ./output_images/pipeline_readme/undistorted_plot.png
+
+[thresh1]: ./output_images/pipeline_readme/thresholds_plot_1.png
+[thresh2]: ./output_images/pipeline_readme/thresholds_plot.png
+
+[bird1]: ./output_images/pipeline_readme/birdeye_plot_1.png
+[bird2]: ./output_images/pipeline_readme/birdeye_plot.png
+
+[binbird]: ./output_images/pipeline_readme/binary_birdeye_plot.png
+[bin]: ./output_images/pipeline_readme/binary_plot.png
+
+[lextr]: ./output_images/pipeline_readme/left_extracted_plot.png
+[rextr]: ./output_images/pipeline_readme/right_extracted_plot.png
+
+[lfit]: ./output_images/pipeline_readme/left_fitted.png
+[rfit]: ./output_images/pipeline_readme/right_fitted.png
+[fit]: ./output_images/pipeline_readme/both_fitted.png
+
+[combbird]: ./output_images/pipeline_readme/combined_birdeye_plot.png
+[comb]: ./output_images/pipeline_readme/combined_plot.png
+
 [video1]: ./output_videos/project_video_processed.mp4 "Project Video"
 
 ## Rubric Points
-See https://review.udacity.com/#!/rubrics/571/view
 
-Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+Here I will consider the rubric points individually and describe how I addressed each point in my implementation. 
+The full Rubrics definition is stated on the Udacity page: https://review.udacity.com/#!/rubrics/571/view
 
 ---
 
-### Writeup / README
+###General Remarks / Software Structure
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.
+As this project was failry involved, a nice and debug & logging frindly software structure was essential. The project is principally modularized into these components:
+
+Classes
+* [Camera](Camera.py): Handles all camera calibrating and undistortion and warping.
+* [Calibration](Calibration.py): Simple storage for camera distortion coefficients.
+* [Lane](Lane.py)
+* [Line](Line.py)
+
+Runners
+* [main](main.py)
+* [plotting](plotting.py)
+* [udacity_code](udacity_code.py)
+
+---
+
+###Writeup / README
+
+####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. Here is a template writeup for this project you can use as a guide and a starting point.
+
 You're reading it!
 
 ---
@@ -34,28 +78,46 @@ You're reading it!
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+All camera related code is implemented inside the [Camera.py](Camera) class. It is constructed by passing these parameters:
+* Number of corners of the chessboard images used for calibration: `corners_x`, `corners_y`, 
+* Activation of Debugging and Logging functionality: `log`, `is_debug`, `mode`,
+* Previously calibrated camera matrices to skip calibration: `calibration`
 
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
+Note: This section is basically adopted from the writeup template as there is no essential difference or addition to mention.
+I start by preparing object points (named `source_points` in code, as this is the source for the latter undistortion), which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image. Thus, `source_points` is just a replicated array of coordinates, and it will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  The image points (named `destination_points` in code, as this is the destination for the latter undistortion) will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+The chessboard corners have been detected using the `cv2.findChessboardCorners` method applied on a previously grayscaled image, handing over the expected number of chessboard corners in x and y. The `cv2.drawChessboardCorners` method eases drawing the detected corners.
 
-![alt text][image1]
+I then used the output source_points and destination_points to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained following results.
+
+|Source Test Image|Detected Chessboard Corners| 
+|---|---|
+|![alt text][cal_src]|![alt text][cal_src_chess]|
+
+|Undistored Image|Undistorted & Warped Image| 
+|---|---|
+|![alt text][cal_src_undist]|![alt text][cal_src_undist_warped]|
 
 ---
 
-###Pipeline (single images)
+###Pipeline (Single Images)
 
 ####1. Provide an example of a distortion-corrected image.
 
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
 
-####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+|Distorted Image|Undistorted Image| 
+|---|---|
+|![alt text][undist1]|![alt text][undist2]|
+
+
+####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image. Provide an example of a binary image result.
 
 I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
-![alt text][image3]
+|Threshold Gradient|Threshold Color|Both Thresholds Applied| 
+|---|---|---|
+|![alt text][thresh1]|![alt text][thresh2]|![alt text][bin]|
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -85,13 +147,22 @@ This resulted in the following source and destination points:
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
+|Input Image|Perpective Transform: Birdeye View| 
+|---|---|
+|![alt text][bird2]|![alt text][bird1]|
+
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
 Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
 
-![alt text][image5]
+|Left Extracted|Right Extracted| 
+|---|---|
+|![alt text][lextr]|![alt text][rextr]|
+
+|Left Fitted|Right Fitted| 
+|---|---|
+|![alt text][lfit]|![alt text][rfit]|
 
 ####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -101,11 +172,13 @@ I did this in lines # through # in my code in `my_other_file.py`
 
 I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
 
-![alt text][image6]
+|Combined Birdeye|Combined Resulting Image| 
+|---|---|
+|![alt text][combbird]|![alt text][comb]|
 
 ---
 
-###Pipeline (video)
+###Pipeline (Video)
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
