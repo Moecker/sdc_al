@@ -40,6 +40,9 @@ The goals / steps of this project are the following:
 [combbird]: ./output_images/pipeline_readme/combined_birdeye_plot.png
 [comb]: ./output_images/pipeline_readme/combined_plot.png
 
+[pers]: ./output_images/pipeline/perpective.png
+[log]: ./output_images/logging.png
+
 [video1]: ./output_videos/project_video_processed.mp4 "Project Video"
 
 ## Rubric Points
@@ -56,8 +59,8 @@ As this project was failry involved, a nice and debug & logging frindly software
 Classes
 * [Camera](Camera.py): Handles all camera calibrating and undistortion and warping.
 * [Calibration](Calibration.py): Simple storage for camera distortion coefficients.
-* [Lane](Lane.py)
-* [Line](Line.py)
+* [Lane](Lane.py): Contains all Lane related code, such as the histogram search for both lines and the general tracking of those.
+* [Line](Line.py): Implements mainly the fitting and evaluation methods as well as the smoothing over time.
 
 Runners
 * [main](main.py)
@@ -70,7 +73,7 @@ Runners
 
 ####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. Here is a template writeup for this project you can use as a guide and a starting point.
 
-You're reading it!
+May I cite you guys here: "You're reading it!" :)
 
 ---
 
@@ -78,7 +81,7 @@ You're reading it!
 
 ####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-All camera related code is implemented inside the [Camera.py](Camera) class. It is constructed by passing these parameters:
+All camera related code is implemented inside the [Camera](Camera.py) class. It is constructed by passing these parameters:
 * Number of corners of the chessboard images used for calibration: `corners_x`, `corners_y`, 
 * Activation of Debugging and Logging functionality: `log`, `is_debug`, `mode`,
 * Previously calibrated camera matrices to skip calibration: `calibration`
@@ -102,18 +105,47 @@ I then used the output source_points and destination_points to compute the camer
 
 ###Pipeline (Single Images)
 
+####0. Pipeline Overview
+
+The pipeline which was applied for images and videos, was established as follows. Preconditions impose the already obtained distortion matrix during the calibration step. To better cache the implemntation in code, I added a log output screenshot revealing each step. For the video pipeline modifications of keeping trakc of previous fits applied, as described in the latter rubrics. The pipeline is triggered in the [main](main.py) script at line #111 in the ´process_image method´.
+
+1. Undistort the image
+2. Apply perpective transform
+3. Detect edges using thresholds (binary)
+4. Locate lane lines on the binary
+5. Fit both lines
+6. Check fit validity
+7. Draw lane onto road
+
+![alt text][log]
+
 ####1. Provide an example of a distortion-corrected image.
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
+To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like the following one. The left image shows the undistorted, source image - the right one shows the same image applied with the disortion Matrix obtained during the camera calibration step. Although no fundamental difference is observed, the undistorted image gives a more "true" representation of the actual lane's shape.
 
 |Distorted Image|Undistorted Image| 
 |---|---|
 |![alt text][undist1]|![alt text][undist2]|
 
-
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image. Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image. Those thersholds are applied in the [Camera](Camera.py) class in line #132 in method `detect_edges`. First, both thresholds are applied independently: 
+* The color thresholds using the saturation (S) channel of a previously HLS color space converted images. This is implemented in line #176 in the `_apply_color_` method
+* The gradient threshold using basically a Sobel filter in x-direction applied on a previously grayscaled image. The actual method can be found in line #154 in method `_apply_sobel_`.
+
+The thresholds are parameterized and those combintation revealed the optimal results for the project video.
+```
+kSaturationMin = 175 # The minimum saturation of the pixel to be considered.
+kSaturationMax = 240 # Likewise the maximum saturation.
+kGradientMin = 15    # The minimum gradient (simple: the amount of change in grayscale value within an area of pixels)
+kGradientMax = 100   # Likewise the maximum allowed gradient.
+```
+
+Secondly, both thresholds were combined by a simple or-concatination revealing a sensitive treshhold by exploiting both methods advantages. For instance, the color threshhold was more robust against brightness changes, wheras the gradient revealed in general more exact results in masking the lines.
+
+Both thresholds are neither absolute max or min values, but were rather obtained experimentally and resulted in reasonable findings as one can see in the [output_images/pipeline](output_images/pipeline) folder.
+
+Here's an example of my output for this step. The most left images displays the result of the gradient treshold on the perspective-transformed (warped) image, the center image the result of the color (or saturation) threshold, and the right shows the combined treshhold applied on the original image.
 
 |Threshold Gradient|Threshold Color|Both Thresholds Applied| 
 |---|---|---|
@@ -121,36 +153,50 @@ I used a combination of color and gradient thresholds to generate a binary image
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform is included in the class [Camera.py](Camera) in line #119 in the method `perspective_transformation`. It basically applies the open-cv method ´cv2.warpPerspective´ on the input image, using the previously obtained perspective transformation matrix `M`. This matrix (and also the `inverse_M` matrix, which is latter required to un-warp the resulting lane visualization back onto the road) are computed only once during instanciation of the `Camera` class using the `cv2.getPerspectiveTransform` method. 
+
+This perspective transform method takes as input four source and four destination points, whereby each of the source points is mapped to the designated destination point. The points were chossen as such that for a straight line image the lines on the prepective transormed image remained straight. Another requirement for the transform was that there was a wide enough area left and right of the lines for anticipating images with strong curves.
+
+I chose to hardcode the source and destination points in the following manner:
 
 ```
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+# Source points for perspective transformation
+self.source_points = np.float32([[200,kBaseBottom],
+                                 [594,kBaseCenter],
+                                 [688,kBaseCenter],
+                                 [1100,kBaseBottom]])
+                                 
+# Destination points for perspective transformation
+self.destination_points = np.float32([[kBaseLeft,kBaseBottom],
+                                      [kBaseLeft,0],
+                                      [kBaseRight,0],
+                                      [kBaseRight,kBaseBottom]])
 
 ```
+with 
+```       
+kBaseLeft = 200
+kBaseRight = 900
+kBaseBottom = 720
+kBaseCenter = 450
+```  
+
 This resulted in the following source and destination points:
 
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| Source      | Destination  | 
+|:-----------:|:------------:| 
+| (200,720)   | (200, 20)    | 
+| (594, 450)  | (200, 0)     |
+| (688, 450)  | (900, 0)     |
+| (1100,720)  | (900,720)    |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+
+![alt text][pers]
 
 |Input Image|Perpective Transform: Birdeye View| 
 |---|---|
 |![alt text][bird2]|![alt text][bird1]|
-
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
