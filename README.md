@@ -40,7 +40,10 @@ The goals / steps of this project are the following:
 [combbird]: ./output_images/pipeline_readme/combined_birdeye_plot.png
 [comb]: ./output_images/pipeline_readme/combined_plot.png
 
-[pers]: ./output_images/pipeline/perpective.png
+[frame]: ./output_images/pipeline_readme/frame_based.png
+[histo]: ./output_images/pipeline_readme/histo_based.png
+
+[pers]: ./output_images/pipeline_readme/perpective.png
 [log]: ./output_images/logging.png
 
 [video1]: ./output_videos/project_video_processed.mp4 "Project Video"
@@ -63,9 +66,9 @@ Classes
 * [Line](Line.py): Implements mainly the fitting and evaluation methods as well as the smoothing over time.
 
 Runners
-* [main](main.py)
-* [plotting](plotting.py)
-* [udacity_code](udacity_code.py)
+* [main](main.py): The main runner and entry point for the image and video pipeline.
+* [plotting](plotting.py): Holds debug code for plotting images of each stage of the pipeline
+* [udacity_code](udacity_code.py): Sample and udacity suggested code for testing and as reference.
 
 ---
 
@@ -200,11 +203,27 @@ I verified that my perspective transform was working as expected by drawing the 
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The main method for detecting lane-line pixels is implemented in the [Lane.py](Lane) class in method `locate_lines` in line #81. There are two modes of detecting line-point from an image I have implemented: One is the histogram based approached and the other is the frame based approach.
+
+In the histogram approach a histogram of the amount of extracted line-points in x-direction is computed. The asusmption behind this approach is that the more line pixels have been extracted at a certain position the more certain this area is part of the actual line. This is rather roboust against outliers as outliers usually don't come in clusters. Only line-pixel clusters would contribute to a high histogram value. 
+
+The algorithm is implemented in the `_locate_lines_histo_based_` method in the same class. It first takes the bottom half of the picture for an initial guess of the basis of both lines. The advantage of a initial broad histogram area is that this area's line pixels are mostly best extracted and to enhance roboustness. It then uses a moving window approach to detect, based on the initial guess, the next upper search window and so on. In the final version I use `self.kNumberOfSlidingWindows = 8` as a reasonable number of windows. The size of the windows comes automatically with the image's height. each window supersedes the previous one
+
+An additional approach is the frame based one implemented also in the Lane class in method `_locate_lines_frame_based_` in line #123. This approach can only be applied once a stable fit and hence valid coefficients for the polynomials have been found. It is way less computation expensive than the histogram approach and should always be favored in situations where a stable lane is available. The histogram approach has its advantages in particular when no initial guess about the lines location is available (i.e. at the very beginning), or when a very bad state of polynomial fitting has been detected by the pipeline (which turned out to be not that easy)
+
+The result of the histogram approach is a chain of rectangles as visualized in the left window. The right window show the frame based approach with a rather continious search area.
+
+|Histogram Approach|Frame Approach| 
+|---|---|
+|![alt text][histo]|![alt text][frame]|
+
+The final result of extracted line points for left and right line are displayed here. After the area of points has been set, the actual points are extracted using `self._extract_fit_points_(left_extracted, <the current line>)` in line #118 and #119.
 
 |Left Extracted|Right Extracted| 
 |---|---|
 |![alt text][lextr]|![alt text][rextr]|
+
+Based on this extracted line points a polynom of 2nd order is fitted taken all points into account. To do so, the numpy method `np.polyfit(self.all_y_pixels, self.all_x_pixels, 2)` is used. The fit is implemented in the [Line.py](Line) class in the `fit` method in line #60. the resulting (three) coefficients are stored inside the member variable `self.current_coefficients`.
 
 |Left Fitted|Right Fitted| 
 |---|---|

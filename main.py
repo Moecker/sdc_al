@@ -28,11 +28,11 @@ kCalibrationPickleFile = 'calibration.p'
 
 shall_calibrate = False;
 
-is_debug = True
-is_camera_debug = True
-is_lane_debug = True
+is_debug = False
+is_camera_debug = False
+is_lane_debug = False
 
-plot_output = True
+plot_output = False
 
 camera = None
 lane = None
@@ -121,7 +121,7 @@ def process_image(image, frame_name=""):
     log.info("# 3.1 Detect edges using thresholds in color and canny")
     binary_image, ignore, ignore = camera.detect_edges(undistorted_image)
     if is_debug: plotted = plot.plot_images(undistorted_image, binary_image, frame_name + "_binary", is_gray=True)
-   
+    
     log.info("# 3.2 Detect edges on the warped image")
     binary_birdeye, sobel, color = camera.detect_edges(birdeye_image)
     if is_debug: plotted = plot.plot_images(birdeye_image, binary_birdeye, frame_name + "_binary_birdeye", is_gray=True)
@@ -141,8 +141,8 @@ def process_image(image, frame_name=""):
         binary_birdeye, birdeye_image, camera.inverse_M)
 
     # @todo Udacity code
-    # lane.locate_lines_udacity(binary_birdeye)
-    # lane.locate_lines_frame_based_udacity(binary_birdeye)
+    lane.locate_lines_udacity(binary_birdeye)
+    lane.locate_lines_frame_based_udacity(binary_birdeye)
 
     if is_debug: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
     if is_debug or plot_output: plotted = plot.plot_images(undistorted_image, combined_image, frame_name + "_combined")
