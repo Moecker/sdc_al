@@ -140,10 +140,6 @@ def process_image(image, frame_name=""):
     combined_image, combined_birdeye = lane.draw_lines(undistorted_image, 
         binary_birdeye, birdeye_image, camera.inverse_M)
 
-    # @todo Udacity code
-    lane.locate_lines_udacity(binary_birdeye)
-    lane.locate_lines_frame_based_udacity(binary_birdeye)
-
     if is_debug: plotted = plot.plot_images(birdeye_image, combined_birdeye, frame_name + "_combined_birdeye")
     if is_debug or plot_output: plotted = plot.plot_images(undistorted_image, combined_image, frame_name + "_combined")
 
