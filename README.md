@@ -57,15 +57,15 @@ The full Rubrics definition is stated on the Udacity page: https://review.udacit
 
 ###General Remarks / Software Structure
 
-As this project was fairly involved, a nice and debug & logging friendly software structure was essential. The project is principally modularized into these components:
+As this project was fairly involved, a modular, debug & logging friendly software structure was essential. The project is principally modularized into these components:
 
-Classes
-* [Camera](Camera.py): Handles all camera calibration, undistortion and prespective tranformation.
+Classes:
+* [Camera](Camera.py): Handles all camera calibration, undistortion and prespective transformation.
 * [Calibration](Calibration.py): Simple storage for camera distortion coefficients.
 * [Lane](Lane.py): Contains all lane related code, such as the histogram search for both lines and the general tracking of those.
 * [Line](Line.py): Implements mainly the fitting and evaluation methods as well as the smoothing over time.
 
-Runners
+Runners:
 * [main](main.py): The main runner and entry point for the image and video pipeline.
 * [plotting](plotting.py): Holds debug code for plotting images of each stage of the pipeline.
 * [udacity_code](udacity_code.py): Samples and from udacity suggested code for testing and as an implementation reference.
@@ -98,7 +98,7 @@ The chessboard corners have been detected using the `cv2.findChessboardCorners` 
 |---|---|
 |![alt text][cal_src]|![alt text][cal_src_chess]|
 
-|Undistored Image|Undistorted & Warped Image| 
+|Undistorted Image|Undistorted & Warped Image| 
 |---|---|
 |![alt text][cal_src_undist]|![alt text][cal_src_undist_warped]|
 
@@ -108,10 +108,10 @@ The chessboard corners have been detected using the `cv2.findChessboardCorners` 
 
 ####0. Pipeline Overview
 
-The pipeline which was applied for images and videos, was established as follows. Preconditions impose the already obtained distortion matrix during the calibration step. To better cache the implemntation in code, I added a log output screenshot revealing each step. For the video pipeline modifications of keeping trakc of previous fits applied, as described in the latter rubrics. The pipeline is triggered in the [main](main.py) script at line #111 in the ´process_image method´.
+The pipeline which was applied for images and videos, was established as follows. Preconditions impose the already obtained distortion matrix during the calibration step. To better cache the implementation in code, I added a log output screenshot revealing each step. For the video pipeline modifications of keeping track of previous fits applied, as described in the latter rubrics. The pipeline is triggered in the [main](main.py) script at line #111 in the `process_image method`.
 
-1. Undistort the image
-2. Apply perpective transform
+1. Undistorted the image
+2. Apply perspective transform
 3. Detect edges using thresholds (binary)
 4. Locate lane lines on the binary
 5. Fit both lines
@@ -122,7 +122,7 @@ The pipeline which was applied for images and videos, was established as follows
 
 ####1. Provide an example of a distortion-corrected image.
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like the following one. The left image shows the undistorted, source image - the right one shows the same image applied with the disortion Matrix obtained during the camera calibration step. Although no fundamental difference is observed, the undistorted image gives a more "true" representation of the actual lane's shape.
+To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like the following one. The left image shows the undistorted, source image - the right one shows the same image applied with the distortion Matrix obtained during the camera calibration step. Although no fundamental difference is observed, the undistorted image gives a more "true" representation of the actual lane's shape.
 
 |Distorted Image|Undistorted Image| 
 |---|---|
@@ -130,23 +130,23 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image. Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image. Those thersholds are applied in the [Camera](Camera.py) class in line #132 in method `detect_edges`. First, both thresholds are applied independently: 
+I used a combination of color and gradient thresholds to generate a binary image. Those thresholds are applied in the [Camera](Camera.py) class in line #132 in method `detect_edges`. First, both thresholds are applied independently: 
 * The color threshold uses the saturation (S) channel of a previously into HLS color space converted image. This is implemented in line #176 in the private `_apply_color_` method. A color threshold assumes that lines have a stronger saturation channel than other environment entities.
-* The gradient threshold approach basically incoporates a Sobel filter in x-direction applied on a previously grayscaled image. The actual method can be found in line #154 in method `_apply_sobel_`. The idea behind the Sobel filter is that lane-lines differ substancially from the surrounding street and hence there exist a gradient from street to line marking.
+* The gradient threshold approach basically incorporates a Sobel filter in x-direction applied on a previously grayscaled image. The actual method can be found in line #154 in method `_apply_sobel_`. The idea behind the Sobel filter is that lane-lines differ substantially from the surrounding street and hence there exist a gradient from street to line marking.
 
-The thresholds are parameterized with min and max values; following combinatation revealed the optimal results for the project video.
+The thresholds are parameterized with min and max values; following combination revealed the optimal results for the project video.
 ```
 kSaturationMin = 175 # The minimum saturation of the pixel to be considered.
 kSaturationMax = 240 # Likewise the maximum saturation.
-kGradientMin = 15    # The minimum gradient (simple: the amount of change in grayscale value within an area of pixels)
+kGradientMin = 15    # The minimum gradient (the amount of change in grayscale value within an area of pixels)
 kGradientMax = 100   # Likewise the maximum allowed gradient.
 ```
 
-Secondly, both thresholds were combined by a simple or-concatination, revealing a sensitive threshhold by exploiting both methods advantages. For instance, the color threshhold was more robust against brightness changes, wheras the gradient revealed in general more exact results in masking the lines.
+Secondly, both thresholds were combined by a simple or-concatenation, revealing a sensitive threshold by exploiting both methods advantages. For instance, the color threshold was more robust against brightness changes, whereas the gradient revealed in general more exact results in masking the lines.
 
 Both thresholds are neither absolute max or min values, but were rather obtained experimentally and resulted in reasonable findings as one can see in the [output_images/pipeline](output_images/pipeline) folder.
 
-Here's an example of my output for this step. The most left image displays the result of the gradient treshold on the perspective-transformed (warped) image, the center image reveales the result of the color (or saturation) threshold, and the most right one shows the combined treshholds applied on the original image.
+Here's an example of my output for this step. The most left image displays the result of the gradient threshold on the perspective-transformed (warped) image, the center image reveals the result of the color (or saturation) threshold, and the most right one shows the combined thresholds applied on the original image.
 
 |Threshold Gradient|Threshold Color|Both Thresholds Applied| 
 |---|---|---|
@@ -154,9 +154,9 @@ Here's an example of my output for this step. The most left image displays the r
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform is included in the class [Camera](Camera.py) in line #119 in the method `perspective_transformation`. It basically applies the open-cv method ´cv2.warpPerspective´ on the input image, using the previously obtained perspective transformation matrix `M`. This matrix (and also the `inverse_M` matrix, which is latter required to un-warp the resulting lane visualization back onto the road) are computed only once during instanciation of the `Camera` class using the `cv2.getPerspectiveTransform` method. 
+The code for my perspective transform is included in the class [Camera](Camera.py) in line #119 in the method `perspective_transformation`. It basically applies the open-cv method `cv2.warpPerspective` on the input image, using the previously obtained perspective transformation matrix `M`. This matrix (and also the `inverse_M` matrix, which is latter required to un-warp the resulting lane visualization back onto the road) are computed only once during instantiation of the `Camera` class using the `cv2.getPerspectiveTransform` method. 
 
-This perspective transform method takes as input four source and four destination points, whereby each of the source points is mapped to the designated destination point. The points were chossen as such that for a straight line image the lines on the prepective transormed image remained straight. Another requirement for the transform was that there was a wide enough area left and right of the lines anticipating images with strong curves.
+This perspective transform method takes as input four source and four destination points, whereby each of the source points is mapped to the designated destination point. The points were chosen as such that for a straight line image the lines on the perceptive transformed image remained straight. Another requirement for the transform was that there was a wide enough area left and right of the lines anticipating images with strong curves.
 
 I chose to hardcode the source and destination points in the following manner:
 
@@ -195,21 +195,21 @@ I verified that my perspective transform was working as expected by drawing the 
 
 ![alt text][pers]
 
-|Input Image|Perpective Transform: Birdeye View| 
+|Input Image|Perspective Transform: Birdeye View| 
 |---|---|
 |![alt text][bird2]|![alt text][bird1]|
 
 ####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-The main method for detecting lane-line pixels is implemented in the [Lane](Lane.py) class in method `locate_lines` in line #81. There are two modes of detecting line-points from an image I have implemented: One is the histogram based approached and the other is the frame based approach. Latters is only usable once a line has already been detected in a previous step and hence only applicable in the video pipeline mode.
+The main method for detecting lane-line pixels is implemented in the [Lane](Lane.py) class in method `locate_lines` in line #81. There are two modes of detecting line-points from an image I have implemented: One is the histogram based approached and the other is the frame based approach. Latter is only usable once a line has already been detected in a previous step and hence only applicable in the video pipeline mode.
 
-In the histogram approach, a histogram of the amount of extracted line-points in x-direction is computed. The asusmption behind this approach is that the more line pixels have been extracted at a certain position the more certain this area is part of the actual line. This is rather robust against outliers as outliers usually don't come in clusters. Only line-pixel clusters would contribute to a high histogram value. 
+In the histogram approach, a histogram of the amount of extracted line-points in x-direction is computed. The assumption behind this approach is that the more line pixels have been extracted at a certain position the more certain this area is part of the actual line. This is rather robust against outliers as outliers usually don't come in clusters. Only line-pixel clusters would contribute to a high histogram value. 
 
 The algorithm is implemented in the `_locate_lines_histo_based_` method in the same class. It first takes the bottom half of the picture for an initial guess of the basis of both lines. The advantage of a initial broad histogram area is that this area's line pixels are mostly best extracted and to enhance robustness. It then uses a moving window approach to detect, based on the initial guess, the next upper search window and so on. In the final version I use `self.kNumberOfSlidingWindows = 8` as a reasonable number of windows. The size of the windows comes automatically with the image's height. Each window supersedes the previous one.
 
 An additional approach is the frame based one implemented also in the [Lane](Lane.py) class in method `_locate_lines_frame_based_` in line #123. This approach can only be applied once a stable fit and hence valid coefficients for the polynomials have been found. It is way less computation expensive than the histogram approach and should always be favored in situations where a stable lane is available. The histogram approach has its advantages in particular when no initial guess about the lines location is available (i.e. at the very beginning), or when a very bad state of polynomial fitting has been detected by the pipeline (which turned out to be not that easy)
 
-The result of the histogram approach with its moving windows is a chain of rectangles as visualized in the left window. The right window shows the frame based approach with a rather continious search area - both marked in green.
+The result of the histogram approach with its moving windows is a chain of rectangles as visualized in the left window. The right window shows the frame based approach with a rather continuous search area - both marked in green.
 
 |Histogram Approach|Frame Approach| 
 |---|---|
@@ -221,7 +221,7 @@ The final result of extracted line points for left and right line are displayed 
 |---|---|
 |![alt text][lextr]|![alt text][rextr]|
 
-Based on this extracted line points a polynom of 2nd order is fitted, taken all points into account. To do so, the numpy method `np.polyfit(self.all_y_pixels, self.all_x_pixels, 2)` is used. The number 2 denotes the order. The fit is implemented in the [Line](Line.py) class in the `fit` method in line #60. the resulting (three) coefficients are stored inside the member variable `self.current_coefficients`. Most of the specifica of a Line is further implemented in this class. The Lane class simply instatiates two instances of a Line for right and left.
+Based on this extracted line points a polynomial of 2nd order is fitted, taken all points into account. To do so, the numpy method `np.polyfit(self.all_y_pixels, self.all_x_pixels, 2)` is used. The number 2 denotes the order. The fit is implemented in the [Line](Line.py) class in the `fit` method in line #60. The resulting (three) coefficients are stored inside the member variable `self.current_coefficients`. Most of the specifica of a Line is further implemented in this class. The Lane class simply instantiates two instances of a Line for right and left.
 
 |Left Fitted|Right Fitted| 
 |---|---|
@@ -237,7 +237,7 @@ self.radius_of_curvature = \
 ```
 and called in the [Line](Line.py) class in method `_compute_curvature_` in line #123.
 
-It is important to mention, that the `curvature_coeffs` are not equal to the coefficient computed in the pixel-space fit. This is due to the fact that we cannot simply convert fitting coefficients from pixel to metric space, but rather must reinitiate the fit. This is done in the same method with adapted x and y values of each pixel. The values taken were empirically chosen; the value 3.7m per 700px is an assumption that according to my research the US lanes are typically 3.7m wide. 700px is simply the in-image measured width of the lane.
+It is important to mention, that the `curvature_coeffs` are not equal to the coefficient computed in the pixel-space fit. This is due to the fact that we cannot simply convert fitting coefficients from pixel to metric space, but rather must reinitialize the fit. This is done in the same method with adapted x and y values of each pixel. The values taken were empirically chosen; the value 3.7m per 700px is an assumption that according to my research the US lanes are typically 3.7m wide. 700px is simply the in-image measured width of the lane.
 
 ```
 ym_per_pix = 30/720 # meters per pixel in y dimension
@@ -248,9 +248,9 @@ xm_per_pix = 3.7/700 # meters per pixel in x dimension
 
 This is the last step of the pipeline and implemented in the [Lane](Lane.py) class in method `draw_lines` in line #226 and `draw_test` in line #260. The method basically uses open-cv methods `cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))` for a green filled area between both detected lines, and `cv2.polylines(color_warp, np.int_([pts_left]), False, (0, 0, 255), thickness=20)` and `cv2.polylines(color_warp, np.int_([pts_right]), False, (255, 0, 0), thickness=20)` for left (red) and right (blue) line.
 
-As previously mentioned, the perpective transform (birdeye) needs to be back-warped to the original image pane. We take use of the inverse matrix computed beforehand and call again the `cv2.warpPerspective` method from open-cv.
+As previously mentioned, the perspective transform (birdeye) needs to be back-warped to the original image pane. We take use of the inverse matrix computed beforehand and call again the `cv2.warpPerspective` method from open-cv.
 
-The overly effect is done using the `cv.addWeighted` method wich applies a slighlty transparent version of the lane detection to the original (though distorted) image. Here is an example of my result on a test image:
+The overly effect is done using the `cv.addWeighted` method which applies a slightly transparent version of the lane detection to the original (though distorted) image. Here is an example of my result on a test image:
 
 |Combined Birdeye|Combined Resulting Image| 
 |---|---|
@@ -262,9 +262,9 @@ The overly effect is done using the `cv.addWeighted` method wich applies a sligh
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result][video1] for the project video. In the folder [output_videos](output_videos/) three more video can be found, however, the pipeline was designed to work with the project video and is not robust enough for all kinds of road conditions. As an additional gimmick I recorded an own image from my car during night time and applied a slighlty adjusted pipeline, in particular with changed source and destination points as the image size differs from the udacity videos.
+Here's a [link to my video result][video1] for the project video. In the folder [output_videos](output_videos/) three more video can be found, however, the pipeline was designed to work with the project video and is not robust enough for all kinds of road conditions. As an additional gimmick I recorded an own image from my car during night time and applied a slightly adjusted pipeline, in particular with changed source and destination points as the image size differs from the udacity videos.
 
-To enhance quality of the lane finding for the video, a number of techniques and concepts were additional developed which can only be meaningfully aplied on a video stream. It essentailly makes use of previous states of the lines. For this the [Line](Line.py) class was enhanced with following fields:
+To enhance quality of the lane finding for the video, a number of techniques and concepts were additional developed which can only be meaningfully applied on a video stream. It essentially makes use of previous states of the lines. For this the [Line](Line.py) class was enhanced with following fields:
 
 ```
 self.detected               # Was the line detected in the last iteration? 
@@ -283,12 +283,16 @@ self.frame_number           # Current frame number
 self.last_frame_update      # Frame number if last successful update
 ```
 
-It would not fit into the context of all details of additonal approaches, but a summarized idea of the concept is given as follows:
-* Smoothing coefficients: Each successfull fit is stored for the last n (which happens to be set to 5) frames in the `all_coefficients` variable. It is then smoothed (simple mean) over those iterations and finally stored inside the `best_coefficients` variable.
-* Assessing line fit: This turned out to be not easily done and is very sensitive to configuration parameters. I basically compare the highest order coefficient (the one effecting the x^2 part of the polynomial) of the best fit with the current fit. If those deviate for more than a certain value (empirically this was set to `kThresholdX2 = 1E-5`), the fit was marked as unsucessful.
-* Dismissing incorrect fits: Fits that have been marked as unsuccessful are skipped for this frame and the lane is not updated, but essentially the smoothed best fit is used instead. This however needs tracking of how many time we already dismissed a frame, since the assess part is not that robust and might mark an valid fit as unsuccessful.
-* Using other line's coefficients: When a bad fit has been observerd for one line, the other uses for a number of frames the higher order coefficients of the other line.
-* Retriggering histogram search: If bad fits have been reported over a period of time, we retrigger the full histogram search, just as we have done during the initial start of the pipeline.
+It would not fit into the context of this writeup to dive into all details of additonal approaches, but a summarized idea of the concepts is given as follows:
+* Smoothing coefficients: Each successful fit is stored for the last n (which happens to be set to 5) frames in the `all_coefficients` variable. It is then smoothed (simple mean) over those iterations and finally stored inside the `best_coefficients` member variable. (Method: `fit` in [Line](Line.py) class)
+
+* Assessing line fit: This turned out to be not easily done and is very sensitive to configuration parameters. I basically compare the highest order coefficient (the one effecting the x^2 part of the polynomial) of the best fit with the current fit. If those deviate for more than a certain threshold (empirically this was set to `kThresholdX2 = 1E-5`), the fit was marked as unsuccessful. (Method: `check_fit` in [Line](Line.py) class)
+
+* Dismissing incorrect fits: Fits that have been marked as unsuccessful are skipped for this frame and the lane is not updated, but essentially the smoothed best fit is used instead. This however needs tracking of how many time we already dismissed a frame, since the assess part is not that robust and might mark an valid fit as unsuccessful. (Method: `fit` in [Line](Line.py) class)
+
+* Using other line's coefficients: When a bad fit has been observed for one line, the other uses for a number of frames the higher order coefficients of the other line. (Method: `check_validity` in [Lane](Lane.py) class)
+
+* Retriggering histogram search: If bad fits have been reported over a period of time, we retrigger the full histogram search, just as we have done during the initial start of the pipeline. (Method: `locate_lines` in [Lane](Lane.py) class)
 
 ###Discussion
 
@@ -296,10 +300,10 @@ It would not fit into the context of all details of additonal approaches, but a 
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
 
-Udacity already provided a good architectural idea of the pipeline which I used for my basic algorithm structure. As already described in the writeup, the pipeline consisted of the steps "Undistort the image", "Apply perpective transform", "Detect edges using thresholds (binary)", "Locate lane lines on the binary", "Fit both lines", "Check fit validity" and finally "Draw lane onto road". The techniques are already described in detail in the regarding section. 
+Udacity already provided a reasonable architectural idea of the pipeline which I used for my basic algorithm structure. As already described in the writeup, the pipeline consisted of seven steps: "Undistort the image", "Apply perspective transform", "Detect edges using thresholds (binary)", "Locate lane lines on the binary", "Fit both lines", "Check fit validity" and finally "Draw lane onto road". The techniques are already described in detail in the regarding section. 
 
-For the image pipeline the extraction of line-points was most challenging and crucial, since we do not have any tracking possiblities for outlier detection. We must take the image for granted and tune the threshholds cor color and gradient as such a good results is achieved. The parameters hence work well with the test images (and the project video), but are not robust enough for the challenging video or even the harder-challenging video. The diversity of lightning, line colors, or even weather conditions expects a flexible setup of treshholds, there is not one soultion for all.
+For the image pipeline the extraction of line-points was most challenging and crucial, since we do not have any tracking possibilities for outlier detection. We must take the image for granted and tune the thresholds for the color and gradient approach as such that a good result is achieved. The parameters work well with the test images (and the project video), but are not robust enough for the challenging video or even the harder-challenging video. I would use the term "overfitting" here as it is in general hard to generalize computer vision approaches as simple as machine learning approaches. The diversity of lightning, line colors, or even weather conditions expects a flexible setup of thresholds, there is not one solution for all.
 
-Also the pipeline is design for curvatures as appearing in the video and fails for the sharp curves in the hard-challenging video, as the area for perpective transform just is not wide enough. Next to these issues wich rather deal with tuning of parameters, there are systematical shortcoming in the pipeline, so that with simple pixel detection and fitting probably no good result for the challenging videos can be achieved.
+Also, the pipeline is designed for radius and curvatures values as appearing in the video and fails for the sharp curves in the hard-challenging video, as the area for perspective transform is just not wide enough. Next to these issues which rather deal with correct tuning of parameters, there are systematical shortcoming in the pipeline, so that with simple pixel detection and fitting probably no good result for the challenging videos can be achieved.
 
-For the project video the pipeline works quite alright with minor and slight jumps and somes unexact fits, but would not cause the car to drive completely off the lane. With help of the advanced techniques described earlier in the video pipeline section, a quite robust lane detection could be achieved. It has still potential for improvements, especially in the areas of assessing a fit of a line and the strategy behing re-triggering a full histogram search. Also the independence of both lines can be enhanced by i.e. only trigger a histo-search for one of the lines, sticking to the frame based approach for the other.
+For the project video the pipeline works quite well with minor and slight jumps and some inexact fits, but would not cause the car to drive completely off the lane. With help of the advanced techniques described earlier in the video pipeline section, a quite robust lane detection could be achieved. It has still potential for improvements, especially in the areas of assessing a fit of a line and the strategy behind re-triggering a full histogram search. Also the independence of both lines can be enhanced by i.e. only trigger a histogram-search for one of the lines, sticking to the frame based approach for the other.
