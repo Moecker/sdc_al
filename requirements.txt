@@ -66,7 +66,7 @@ Keras==1.2.0
 lazy-object-proxy==1.2.1
 llvmlite==0.13.0
 locket==0.2.0
-lxml==3.6.4
+lxml==4.6.2
 MarkupSafe==0.23
 matplotlib==1.5.3
 menuinst==1.4.1
