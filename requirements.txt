@@ -66,7 +66,7 @@ Keras==1.2.0
 lazy-object-proxy==1.2.1
 llvmlite==0.13.0
 locket==0.2.0
-lxml==3.6.4
+lxml==4.9.1
 MarkupSafe==0.23
 matplotlib==1.5.3
 menuinst==1.4.1
@@ -137,7 +137,7 @@ simplegeneric==0.8.1
 singledispatch==3.4.0.3
 six==1.10.0
 snowballstemmer==1.2.1
-sockjs-tornado==1.0.3
+sockjs-tornado==1.0.7
 sphinx==1.4.6
 spyder==3.0.0
 SQLAlchemy==1.0.13
@@ -147,7 +147,7 @@ tables==3.2.2
 tensorflow==0.12.1
 Theano==0.8.2
 toolz==0.8.0
-tornado==4.4.1
+tornado==5.1
 tqdm==4.11.2
 traitlets==4.3.0
 unicodecsv==0.14.1
