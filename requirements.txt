@@ -41,7 +41,7 @@ filelock==2.0.6
 Flask==0.11.1
 Flask-Cors==2.1.2
 Flask-SocketIO==2.7.1
-gevent==1.1.2
+gevent==1.2a1
 graphviz==0.5.2
 greenlet==0.4.10
 h5py==2.6.0
